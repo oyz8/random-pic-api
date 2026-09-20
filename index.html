@@ -1,385 +1,912 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>随机图片 API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root, :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --bg-gradient:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 42%),
+        radial-gradient(circle at right 20%, rgba(2, 132, 199, 0.06), transparent 38%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+      --panel: rgba(255, 255, 255, 0.85);
+      --panel-border: rgba(15, 23, 42, 0.06);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-faint: #64748b;
+      --primary: #0f766e;
+      --primary-hover: #0d9488;
+      --primary-strong: #115e59;
+      --primary-glow: rgba(15, 118, 110, 0.15);
+      --accent: #0891b2;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+      --card-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+      --input-bg: #ffffff;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --code-inline-bg: #eef2f7;
+      --code-inline-text: #0f766e;
+      --table-header-bg: #f8fafc;
+      --table-border: #e2e8f0;
+      --table-row-hover: #f1f5f9;
+      --tag-redirect-bg: rgba(16, 185, 129, 0.1);
+      --tag-redirect-text: #059669;
+      --tag-json-bg: rgba(14, 165, 233, 0.1);
+      --tag-json-text: #0284c7;
+      --btn-ghost-bg: #e2e8f0;
+      --btn-ghost-hover: #cbd5e1;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0b0f19;
+      --bg-gradient:
+        radial-gradient(circle at top left, rgba(20, 184, 166, 0.12), transparent 45%),
+        radial-gradient(circle at right 20%, rgba(14, 165, 233, 0.08), transparent 42%),
+        linear-gradient(180deg, #0b0f19 0%, #030712 100%);
+      --panel: rgba(17, 24, 39, 0.7);
+      --panel-border: rgba(255, 255, 255, 0.06);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --primary: #14b8a6;
+      --primary-hover: #2dd4bf;
+      --primary-strong: #99f6e4;
+      --primary-glow: rgba(20, 184, 166, 0.25);
+      --accent: #38bdf8;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      --input-bg: #1e293b;
+      --code-bg: #020617;
+      --code-text: #e2e8f0;
+      --code-inline-bg: #1e293b;
+      --code-inline-text: #5eead4;
+      --table-header-bg: #1e293b;
+      --table-border: #334155;
+      --table-row-hover: #1e293b;
+      --tag-redirect-bg: rgba(16, 185, 129, 0.15);
+      --tag-redirect-text: #34d399;
+      --tag-json-bg: rgba(14, 165, 233, 0.15);
+      --tag-json-text: #38bdf8;
+      --btn-ghost-bg: #334155;
+      --btn-ghost-hover: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       min-height: 100vh;
-      color: #e4e4e4;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      background-image: var(--bg-gradient);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      transition: background 0.3s ease, color 0.3s ease;
       line-height: 1.6;
-      padding: 40px 20px;
     }
-    .container { max-width: 900px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 50px; position: relative; }
-    h1 {
-      font-size: 2.5rem;
-      background: linear-gradient(90deg, #00d9ff, #00ff88);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 10px;
+
+    .shell {
+      width: min(1080px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
     }
-    .subtitle { color: #888; font-size: 1.1rem; }
-    
-    /* GitHub 链接样式 */
-    .github-link {
-      position: absolute;
-      top: 0;
-      right: 0;
+
+    /* ---------- Header ---------- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand {
       display: flex;
       align-items: center;
       gap: 8px;
-      color: #888;
-      text-decoration: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      transition: all 0.3s;
     }
-    .github-link:hover {
-      color: #fff;
-      background: rgba(255,255,255,0.1);
-      border-color: rgba(255,255,255,0.2);
-      transform: translateY(-2px);
+
+    .brand .logo {
+      color: var(--primary);
+      width: 26px;
+      height: 26px;
     }
-    .github-link svg {
-      width: 20px;
-      height: 20px;
-      fill: currentColor;
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary-strong);
+      background: var(--primary-glow);
+      border: 1px solid var(--panel-border);
     }
-    
-    .stats {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-    .stat-item {
-      background: rgba(255,255,255,0.05);
-      padding: 15px 25px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    .stat-num { font-size: 1.8rem; font-weight: bold; color: #00d9ff; }
-    .stat-label { font-size: 0.85rem; color: #888; }
-    .section {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 30px;
-      margin-bottom: 25px;
-    }
-    h2 {
-      font-size: 1.4rem;
-      color: #00d9ff;
-      margin-bottom: 20px;
+
+    .header-actions {
       display: flex;
       align-items: center;
       gap: 10px;
     }
+
+    .icon-btn,
+    .gh-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      padding: 0;
+    }
+
+    .icon-btn:hover,
+    .gh-link:hover {
+      background: var(--table-row-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .icon-btn:active,
+    .gh-link:active { transform: scale(0.96); }
+
+    .icon-btn svg,
+    .gh-link svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .gh-link svg { fill: currentColor; stroke: none; }
+
+    :root[data-theme="dark"] .icon-btn .sun-icon { opacity: 1; transform: rotate(0deg) scale(1); }
+    :root[data-theme="dark"] .icon-btn .moon-icon { opacity: 0; transform: rotate(90deg) scale(0); position: absolute; }
+    :root[data-theme="light"] .icon-btn .sun-icon { opacity: 0; transform: rotate(-90deg) scale(0); position: absolute; }
+    :root[data-theme="light"] .icon-btn .moon-icon { opacity: 1; transform: rotate(0deg) scale(1); }
+
+    .icon-btn svg {
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 22px;
+      padding: 36px 32px;
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 24px;
+      padding: 1px;
+      background: linear-gradient(135deg, var(--primary-glow), transparent 40%, transparent 60%, rgba(14, 165, 233, 0.15));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      background: linear-gradient(120deg, var(--text) 0%, var(--primary) 60%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    .lead {
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 720px;
+    }
+
+    /* ---------- Stats ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .stat {
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--panel-border);
+      background: var(--input-bg);
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stat:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px var(--primary-glow);
+      border-color: var(--primary-glow);
+    }
+
+    .stat-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    /* ---------- Preview ---------- */
+    .preview-card {
+      margin-bottom: 22px;
+      padding: 24px;
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: background 0.3s ease, border-color 0.3s ease;
+      text-align: center;
+    }
+
+    .preview-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: 0;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: 0 8px 24px var(--primary-glow);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preview-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px var(--primary-glow);
+      filter: brightness(1.05);
+    }
+
+    .preview-btn:active { transform: scale(0.97); }
+
+    .preview-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .preview-btn.loading svg { animation: spin 1s linear infinite; }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .preview-container {
+      margin-top: 20px;
+      display: none;
+      position: relative;
+    }
+
+    .preview-container.show { display: block; }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 460px;
+      border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--panel-border);
+      display: block;
+      margin: 0 auto;
+      transition: opacity 0.3s ease;
+    }
+
+    .preview-img.loading { opacity: 0.3; }
+
+    /* ---------- Sections ---------- */
+    .section {
+      margin-bottom: 20px;
+      padding: 26px;
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     h2::before {
       content: '';
       width: 4px;
-      height: 24px;
-      background: linear-gradient(180deg, #00d9ff, #00ff88);
+      height: 20px;
       border-radius: 2px;
+      background: linear-gradient(180deg, var(--primary), var(--accent));
     }
-    table { width: 100%; border-collapse: collapse; }
+
+    /* ---------- Table ---------- */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      background: var(--input-bg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 620px;
+    }
+
+    thead {
+      background: var(--table-header-bg);
+    }
+
     th, td {
-      padding: 12px 15px;
+      padding: 13px 16px;
       text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 13.5px;
+      border-bottom: 1px solid var(--table-border);
+      vertical-align: middle;
     }
-    th { background: rgba(0,217,255,0.1); color: #00d9ff; font-weight: 600; }
+
+    th {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    tbody tr { transition: background 0.15s ease; }
+    tbody tr:hover { background: var(--table-row-hover); }
+    tbody tr:last-child td { border-bottom: none; }
+
     td code {
-      background: rgba(0,0,0,0.3);
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      background: var(--code-inline-bg);
+      color: var(--code-inline-text);
       padding: 3px 8px;
-      border-radius: 4px;
-      font-family: monospace;
-      color: #7ee787;
-    }
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-    .tag-redirect { background: #238636; color: #fff; }
-    .tag-json { background: #1f6feb; color: #fff; }
-    .api-url {
-      background: #0d1117;
-      border: 1px solid #30363d;
       border-radius: 6px;
-      padding: 12px 15px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      color: #7ee787;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    .tag-redirect { background: var(--tag-redirect-bg); color: var(--tag-redirect-text); }
+    .tag-json { background: var(--tag-json-bg); color: var(--tag-json-text); }
+
+    /* ---------- URL Box ---------- */
+    .url-box {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      background: var(--code-bg);
       margin: 10px 0;
+      transition: border-color 0.2s ease;
     }
-    .copy-btn {
-      background: #238636;
-      color: #fff;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      flex-shrink: 0;
-    }
-    .copy-btn:hover { background: #2ea043; }
-    .copy-btn.copied { background: #00d9ff; }
-    .example-code {
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 15px 0;
+
+    .url-box code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 13px;
+      color: #7ee787;
       overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: thin;
     }
-    .example-code pre {
-      margin: 0;
-      font-family: monospace;
-      font-size: 0.85rem;
-      color: #c9d1d9;
-    }
-    .preview-section { margin: 25px 0; text-align: center; }
-    .preview-btn {
-      background: linear-gradient(90deg, #00d9ff, #00ff88);
-      color: #1a1a2e;
-      border: none;
-      padding: 12px 30px;
+
+    .url-box code::-webkit-scrollbar { height: 4px; }
+    .url-box code::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+    .copy-btn {
+      flex-shrink: 0;
+      padding: 7px 14px;
       border-radius: 8px;
-      font-size: 1rem;
+      border: 0;
+      font-family: 'Outfit', sans-serif;
       font-weight: 600;
+      font-size: 12.5px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    .preview-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0,217,255,0.3);
+
+    .copy-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .copy-btn:active { transform: scale(0.97); }
+    .copy-btn.copied { background: linear-gradient(135deg, #059669, #10b981); }
+    .copy-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .hint {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      margin-bottom: 8px;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .preview-container { margin-top: 20px; display: none; }
-    .preview-container.show { display: block; }
-    .preview-img {
-      max-width: 100%;
-      max-height: 400px;
-      border-radius: 10px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+
+    .hint:first-of-type { margin-top: 0; }
+
+    /* ---------- Code ---------- */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 10px 0;
+      overflow-x: auto;
+      position: relative;
     }
-    footer { 
-      text-align: center; 
-      margin-top: 50px; 
-      color: #666; 
-      font-size: 0.9rem; 
+
+    .code-block pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--code-text);
+      white-space: pre;
+      margin: 0;
     }
-    footer a {
-      color: #00d9ff;
+
+    .code-block pre .k { color: #7ee787; }
+    .code-block pre .s { color: #ffa657; }
+    .code-block pre .c { color: #6b7280; font-style: italic; }
+
+    /* ---------- Footer ---------- */
+    .footer {
+      margin-top: 32px;
+      padding: 22px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      line-height: 1.9;
+    }
+
+    .footer a {
+      color: var(--primary);
       text-decoration: none;
+      border-bottom: 1px solid var(--primary-glow);
+      transition: color 0.2s ease, border-bottom-color 0.2s ease;
+      font-weight: 500;
     }
-    footer a:hover {
-      text-decoration: underline;
+
+    .footer a:hover {
+      color: var(--primary-hover);
+      border-bottom-color: var(--primary);
     }
-    @media (max-width: 600px) {
-      h1 { font-size: 1.8rem; }
-      .section { padding: 20px; }
-      table { font-size: 0.85rem; }
-      th, td { padding: 8px 10px; }
-      .github-link {
-        position: static;
-        display: inline-flex;
-        margin-top: 15px;
-      }
+
+    .footer .dot {
+      display: inline-block;
+      margin: 0 8px;
+      opacity: 0.5;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 720px) {
+      .shell { padding: 16px 0 32px; }
+      .hero { padding: 26px 22px; border-radius: 20px; }
+      .section, .preview-card { padding: 20px; border-radius: 16px; }
+      .stats { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .stats .stat:last-child { grid-column: 1 / -1; }
+      .stat-num { font-size: 22px; }
+      .gh-link span { display: none; }
+      .gh-link { padding: 0 12px; }
+      th, td { padding: 10px 12px; font-size: 12.5px; }
+      h1 { font-size: 24px; }
+      .eyebrow { font-size: 10px; padding: 5px 10px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <a href="https://github.com/oyz8/random-pic-api" target="_blank" class="github-link">
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  <div class="shell">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
         </svg>
-        <span>GitHub</span>
-      </a>
-      <h1>🎨 随机图片 API</h1>
-      <p class="subtitle">简单、快速、免费的随机图片服务</p>
+        <span class="eyebrow">Random Image API</span>
+      </div>
+      <div class="header-actions">
+        <a href="https://github.com/oyz8/random-pic-api" target="_blank" rel="noopener noreferrer" class="gh-link" aria-label="GitHub">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <button id="themeToggle" class="icon-btn" aria-label="切换主题" title="切换日间/夜间模式">
+          <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h1>随机图片 API</h1>
+      <p class="lead">
+        简单、快速、免费的随机图片服务。根据设备方向与深色/浅色主题自动挑选，支持 302 重定向与 JSON 两种返回方式。
+      </p>
+
       <div class="stats">
-        <div class="stat-item">
-          <div class="stat-num" id="totalCount">-</div>
+        <div class="stat">
+          <div class="stat-num" id="totalCount">—</div>
           <div class="stat-label">图片总数</div>
         </div>
-        <div class="stat-item">
-          <div class="stat-num" id="hCount">-</div>
+        <div class="stat">
+          <div class="stat-num" id="hCount">—</div>
           <div class="stat-label">横屏图片</div>
         </div>
-        <div class="stat-item">
-          <div class="stat-num" id="vCount">-</div>
+        <div class="stat">
+          <div class="stat-num" id="vCount">—</div>
           <div class="stat-label">竖屏图片</div>
         </div>
       </div>
-    </header>
-    
-    <div class="preview-section">
-      <button class="preview-btn" onclick="previewImage()">✨ 预览随机图片</button>
+    </section>
+
+    <!-- Preview -->
+    <section class="preview-card">
+      <button class="preview-btn" id="previewBtn" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+        </svg>
+        <span>预览随机图片</span>
+      </button>
       <div class="preview-container" id="previewContainer">
-        <img class="preview-img" id="previewImg" alt="预览图片">
+        <img class="preview-img" id="previewImg" alt="预览图片" />
       </div>
-    </div>
+    </section>
 
-    <div class="section">
+    <!-- API -->
+    <section class="section">
       <h2>API 接口</h2>
-      <table>
-        <tr>
-          <th>URL</th>
-          <th>说明</th>
-          <th>返回</th>
-        </tr>
-        <tr>
-          <td><code>/pic</code></td>
-          <td>自动根据设备选择</td>
-          <td><span class="tag tag-redirect">302 重定向</span></td>
-        </tr>
-        <tr>
-          <td><code>/pic?img=ua</code></td>
-          <td>自动根据 UA 选择</td>
-          <td><span class="tag tag-redirect">302 重定向</span></td>
-        </tr>
-        <tr>
-          <td><code>/pic?img=h</code></td>
-          <td>横屏随机图片</td>
-          <td><span class="tag tag-redirect">302 重定向</span></td>
-        </tr>
-        <tr>
-          <td><code>/pic?img=v</code></td>
-          <td>竖屏随机图片</td>
-          <td><span class="tag tag-redirect">302 重定向</span></td>
-        </tr>
-        <tr>
-          <td><code>/pic?json=h</code></td>
-          <td>横屏随机图片</td>
-          <td><span class="tag tag-json">JSON</span></td>
-        </tr>
-        <tr>
-          <td><code>/pic?json=v</code></td>
-          <td>竖屏随机图片</td>
-          <td><span class="tag tag-json">JSON</span></td>
-        </tr>
-      </table>
-    </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>URL</th>
+              <th>说明</th>
+              <th>返回</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/pic</code></td>
+              <td>自动根据设备选择方向</td>
+              <td><span class="tag tag-redirect">302 重定向</span></td>
+            </tr>
+            <tr>
+              <td><code>/pic?img=ua</code></td>
+              <td>根据 User-Agent 判断方向</td>
+              <td><span class="tag tag-redirect">302 重定向</span></td>
+            </tr>
+            <tr>
+              <td><code>/pic?img=h</code></td>
+              <td>横屏随机图片</td>
+              <td><span class="tag tag-redirect">302 重定向</span></td>
+            </tr>
+            <tr>
+              <td><code>/pic?img=v</code></td>
+              <td>竖屏随机图片</td>
+              <td><span class="tag tag-redirect">302 重定向</span></td>
+            </tr>
+            <tr>
+              <td><code>/pic?json=h</code></td>
+              <td>横屏随机图片（含主题信息）</td>
+              <td><span class="tag tag-json">JSON</span></td>
+            </tr>
+            <tr>
+              <td><code>/pic?json=v</code></td>
+              <td>竖屏随机图片（含主题信息）</td>
+              <td><span class="tag tag-json">JSON</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-    <div class="section">
+    <!-- Quick Start -->
+    <section class="section">
       <h2>快速使用</h2>
-      
-      <p style="color:#aaa;margin-bottom:10px;">📷 直接获取图片（适用于 img 标签、CSS 背景）</p>
-      <div class="api-url">
+
+      <p class="hint">📷 直接获取图片（适用于 img 标签、CSS 背景）</p>
+      <div class="url-box">
         <code id="urlPic"></code>
-        <button class="copy-btn" onclick="copyUrl(this, 'pic')">复制</button>
+        <button class="copy-btn" data-url-id="urlPic" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>复制</span>
+        </button>
       </div>
-      
-      <p style="color:#aaa;margin:15px 0 10px;">📊 获取 JSON 数据（含主题信息）</p>
-      <div class="api-url">
+
+      <p class="hint">📊 获取 JSON 数据（包含主题信息）</p>
+      <div class="url-box">
         <code id="urlJson"></code>
-        <button class="copy-btn" onclick="copyUrl(this, 'json')">复制</button>
+        <button class="copy-btn" data-url-id="urlJson" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>复制</span>
+        </button>
       </div>
-      
-      <div class="example-code">
-<pre>// JSON 响应示例
+
+      <div class="code-block">
+<pre><span class="c">// JSON 响应示例</span>
 {
-  "theme": "dark",
-  "url": "<span id="exampleUrl"></span>"
+  <span class="k">"theme"</span>: <span class="s">"dark"</span>,
+  <span class="k">"url"</span>: <span class="s">"<span id="exampleUrl"></span>"</span>
 }</pre>
       </div>
-    </div>
+    </section>
 
-    <div class="section">
+    <!-- Examples -->
+    <section class="section">
       <h2>使用示例</h2>
-      
-      <p style="color:#888;font-size:0.9rem;margin-bottom:8px;">HTML</p>
-      <div class="example-code">
-<pre>&lt;img src="<span class="origin"></span>/pic?img=h" alt="随机壁纸"&gt;</pre>
+
+      <p class="hint" style="margin-top:0;">HTML</p>
+      <div class="code-block">
+<pre>&lt;<span class="k">img</span> <span class="k">src</span>=<span class="s">"<span class="origin"></span>/pic?img=h"</span> <span class="k">alt</span>=<span class="s">"随机壁纸"</span>&gt;</pre>
       </div>
-      
-      <p style="color:#888;font-size:0.9rem;margin-bottom:8px;">CSS 背景</p>
-      <div class="example-code">
-<pre>body {
-  background-image: url('<span class="origin"></span>/pic');
-  background-size: cover;
+
+      <p class="hint">CSS 背景</p>
+      <div class="code-block">
+<pre><span class="k">body</span> {
+  <span class="k">background-image</span>: <span class="s">url('<span class="origin"></span>/pic')</span>;
+  <span class="k">background-size</span>: cover;
 }</pre>
       </div>
-      
-      <p style="color:#888;font-size:0.9rem;margin-bottom:8px;">JavaScript</p>
-      <div class="example-code">
-<pre>fetch('<span class="origin"></span>/pic?json=h')
-  .then(res => res.json())
-  .then(data => console.log(data.theme, data.url));</pre>
-      </div>
-    </div>
 
-    <footer>
-      <p>💡 图片格式：WebP | 自动适配深色/浅色主题</p>
-      <p style="margin-top: 10px;">
-        <a href="https://github.com/oyz8/random-pic-api" target="_blank">⭐ Star on GitHub</a>
-        &nbsp;·&nbsp;
-        <a href="https://github.com/oyz8/random-pic-api/issues" target="_blank">🐛 反馈问题</a>
-      </p>
+      <p class="hint">JavaScript</p>
+      <div class="code-block">
+<pre><span class="k">fetch</span>(<span class="s">'<span class="origin"></span>/pic?json=h'</span>)
+  .<span class="k">then</span>(res =&gt; res.<span class="k">json</span>())
+  .<span class="k">then</span>(data =&gt; console.<span class="k">log</span>(data.theme, data.url));</pre>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>💡 图片格式：WebP · 自动适配深色 / 浅色主题</div>
+      <div>
+        <a href="https://github.com/oyz8/random-pic-api" target="_blank" rel="noopener noreferrer">⭐ Star on GitHub</a>
+        <span class="dot">·</span>
+        <a href="https://github.com/oyz8/random-pic-api/issues" target="_blank" rel="noopener noreferrer">🐛 反馈问题</a>
+      </div>
     </footer>
   </div>
 
   <script>
     const origin = location.origin;
-    
-    // 填充 URL
+
+    // ---------- 填充 URL ----------
     document.getElementById('urlPic').textContent = origin + '/pic';
     document.getElementById('urlJson').textContent = origin + '/pic?json=h';
     document.getElementById('exampleUrl').textContent = origin + '/ri/hd/1.webp';
-    document.querySelectorAll('.origin').forEach(el => el.textContent = origin);
-    
-    // 加载统计
-    fetch('/ri/count.json')
-      .then(res => res.json())
-      .then(data => {
-        const hTotal = (data.hd || 0) + (data.hl || 0);
-        const vTotal = (data.vd || 0) + (data.vl || 0);
-        document.getElementById('totalCount').textContent = hTotal + vTotal;
-        document.getElementById('hCount').textContent = hTotal;
-        document.getElementById('vCount').textContent = vTotal;
+    document.querySelectorAll('.origin').forEach((el) => { el.textContent = origin; });
+
+    // ---------- 统计 ----------
+    function getAvailableCount(categoryData) {
+      if (!categoryData) return 0;
+      if (typeof categoryData === 'object' && categoryData.max !== undefined) {
+        const excludeCount = Array.isArray(categoryData.exclude) ? categoryData.exclude.length : 0;
+        return Math.max(0, categoryData.max - excludeCount);
+      }
+      if (typeof categoryData === 'number') return categoryData;
+      return 0;
+    }
+
+    function setStatText(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = typeof value === 'number' ? value.toLocaleString() : value;
+    }
+
+    fetch('/ri/count.json', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        const hd = getAvailableCount(data.hd);
+        const hl = getAvailableCount(data.hl);
+        const vd = getAvailableCount(data.vd);
+        const vl = getAvailableCount(data.vl);
+        const hTotal = hd + hl;
+        const vTotal = vd + vl;
+        setStatText('totalCount', hTotal + vTotal);
+        setStatText('hCount', hTotal);
+        setStatText('vCount', vTotal);
       })
       .catch(() => {
-        document.getElementById('totalCount').textContent = '?';
-        document.getElementById('hCount').textContent = '?';
-        document.getElementById('vCount').textContent = '?';
+        setStatText('totalCount', '?');
+        setStatText('hCount', '?');
+        setStatText('vCount', '?');
       });
-    
-    function copyUrl(btn, type) {
-      const url = type === 'pic' ? origin + '/pic' : origin + '/pic?json=h';
-      navigator.clipboard.writeText(url).then(() => {
-        btn.textContent = '已复制!';
-        btn.classList.add('copied');
+
+    // ---------- 复制 ----------
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.urlId);
+        if (!target) return;
+        const text = target.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const span = btn.querySelector('span');
+          const old = span.textContent;
+          btn.classList.add('copied');
+          span.textContent = '已复制';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            span.textContent = old;
+          }, 1500);
+        });
+      });
+    });
+
+    // ---------- 预览 ----------
+    const previewBtn = document.getElementById('previewBtn');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImg = document.getElementById('previewImg');
+
+    previewBtn.addEventListener('click', () => {
+      previewBtn.classList.add('loading');
+      previewBtn.disabled = true;
+      previewContainer.classList.add('show');
+      previewImg.classList.add('loading');
+
+      const newSrc = origin + '/pic?t=' + Date.now();
+      const tmp = new Image();
+      tmp.onload = () => {
+        previewImg.src = newSrc;
+        previewImg.classList.remove('loading');
+        previewBtn.classList.remove('loading');
+        previewBtn.disabled = false;
         setTimeout(() => {
-          btn.textContent = '复制';
-          btn.classList.remove('copied');
-        }, 1500);
-      });
-    }
-    
-    function previewImage() {
-      const container = document.getElementById('previewContainer');
-      const img = document.getElementById('previewImg');
-      img.src = origin + '/pic?t=' + Date.now();
-      container.classList.add('show');
-      img.onload = () => img.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+          previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      };
+      tmp.onerror = () => {
+        previewImg.classList.remove('loading');
+        previewBtn.classList.remove('loading');
+        previewBtn.disabled = false;
+        previewImg.alt = '加载失败';
+      };
+      tmp.src = newSrc;
+    });
+
+    // ---------- 主题切换 ----------
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+      }
+    });
   </script>
 </body>
 </html>
