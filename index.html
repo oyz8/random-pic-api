@@ -4,9 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>随机图片 API</title>
+  <meta name="description" content="简单、快速、免费的随机图片 API。按设备方向和深色/浅色主题自动匹配，支持 302 跳转与 JSON 返回。" />
+  <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)" />
+  <meta property="og:title" content="随机图片 API" />
+  <meta property="og:description" content="按方向和主题自动匹配的随机图片服务。" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='600' height='600' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='logoGrad' x1='0' y1='0' x2='24' y2='24' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%2314b8a6'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23logoGrad)' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
   <script>
     (function () {
       const savedTheme = localStorage.getItem('theme');
@@ -131,9 +139,11 @@
     }
 
     .brand .logo {
-      color: var(--primary);
       width: 26px;
       height: 26px;
+      display: block;
+      object-fit: contain;
+      flex-shrink: 0;
     }
 
     .eyebrow {
@@ -179,6 +189,7 @@
     }
 
     .icon-btn {
+      position: relative;
       width: 40px;
       padding: 0;
     }
@@ -345,6 +356,11 @@
 
     .preview-btn:active { transform: scale(0.97); }
 
+    .preview-btn:disabled {
+      cursor: wait;
+      opacity: 0.85;
+    }
+
     .preview-btn svg {
       width: 18px;
       height: 18px;
@@ -360,6 +376,33 @@
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
+    }
+
+    .preview-hint {
+      margin-top: 14px;
+      font-size: 12.5px;
+      color: var(--text-faint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .preview-hint kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 5px;
+      border: 1px solid var(--panel-border);
+      background: var(--input-bg);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      box-shadow: 0 1px 0 var(--panel-border);
     }
 
     .preview-container {
@@ -532,10 +575,21 @@
       margin-top: 16px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .hint:first-of-type { margin-top: 0; }
+    .hint svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--primary);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
     /* ---------- Code ---------- */
     .code-block {
@@ -571,12 +625,40 @@
       line-height: 1.9;
     }
 
+    .footer > div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--primary);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .footer svg[data-solid="true"] {
+      fill: currentColor;
+      stroke: none;
+    }
+
     .footer a {
       color: var(--primary);
       text-decoration: none;
       border-bottom: 1px solid var(--primary-glow);
       transition: color 0.2s ease, border-bottom-color 0.2s ease;
       font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .footer a:hover {
@@ -586,8 +668,22 @@
 
     .footer .dot {
       display: inline-block;
-      margin: 0 8px;
       opacity: 0.5;
+    }
+
+    /* ---------- Fallback: 不支持 backdrop-filter ---------- */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .hero, .preview-card, .section { background: var(--bg); }
+    }
+
+    /* ---------- Reduced motion ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
 
     /* ---------- Responsive ---------- */
@@ -603,6 +699,8 @@
       th, td { padding: 10px 12px; font-size: 12.5px; }
       h1 { font-size: 24px; }
       .eyebrow { font-size: 10px; padding: 5px 10px; }
+      .preview-img { max-height: 320px; }
+      body { background-attachment: scroll; }
     }
   </style>
 </head>
@@ -611,9 +709,7 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-        </svg>
+        <img class="logo" src="https://img.nezha.loc.cc/pic.svg" alt="随机图片 API" width="26" height="26" />
         <span class="eyebrow">Random Image API</span>
       </div>
       <div class="header-actions">
@@ -623,7 +719,7 @@
           </svg>
           <span>GitHub</span>
         </a>
-        <button id="themeToggle" class="icon-btn" aria-label="切换主题" title="切换日间/夜间模式">
+        <button id="themeToggle" class="icon-btn" aria-label="切换主题" title="单击切换日间/夜间模式，双击恢复跟随系统">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -642,158 +738,203 @@
       </div>
     </header>
 
-    <!-- Hero -->
-    <section class="hero">
-      <h1>随机图片 API</h1>
-      <p class="lead">
-        简单、快速、免费的随机图片服务。根据设备方向与深色/浅色主题自动挑选，支持 302 重定向与 JSON 两种返回方式。
-      </p>
+    <main>
+      <!-- Hero -->
+      <section class="hero">
+        <h1>随机图片 API</h1>
+        <p class="lead">
+          简单、快速、免费的随机图片服务。根据设备方向与深色/浅色主题自动挑选，支持 302 重定向与 JSON 两种返回方式。
+        </p>
 
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-num" id="totalCount">—</div>
-          <div class="stat-label">图片总数</div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-num" id="totalCount">—</div>
+            <div class="stat-label">图片总数</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="hCount">—</div>
+            <div class="stat-label">横屏图片</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="vCount">—</div>
+            <div class="stat-label">竖屏图片</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-num" id="hCount">—</div>
-          <div class="stat-label">横屏图片</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="vCount">—</div>
-          <div class="stat-label">竖屏图片</div>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Preview -->
-    <section class="preview-card">
-      <button class="preview-btn" id="previewBtn" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-        </svg>
-        <span>预览随机图片</span>
-      </button>
-      <div class="preview-container" id="previewContainer">
-        <img class="preview-img" id="previewImg" alt="预览图片" />
-      </div>
-    </section>
-
-    <!-- API -->
-    <section class="section">
-      <h2>API 接口</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>URL</th>
-              <th>说明</th>
-              <th>返回</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>/pic</code></td>
-              <td>自动根据设备选择方向</td>
-              <td><span class="tag tag-redirect">302 重定向</span></td>
-            </tr>
-            <tr>
-              <td><code>/pic?img=ua</code></td>
-              <td>根据 User-Agent 判断方向</td>
-              <td><span class="tag tag-redirect">302 重定向</span></td>
-            </tr>
-            <tr>
-              <td><code>/pic?img=h</code></td>
-              <td>横屏随机图片</td>
-              <td><span class="tag tag-redirect">302 重定向</span></td>
-            </tr>
-            <tr>
-              <td><code>/pic?img=v</code></td>
-              <td>竖屏随机图片</td>
-              <td><span class="tag tag-redirect">302 重定向</span></td>
-            </tr>
-            <tr>
-              <td><code>/pic?json=h</code></td>
-              <td>横屏随机图片（含主题信息）</td>
-              <td><span class="tag tag-json">JSON</span></td>
-            </tr>
-            <tr>
-              <td><code>/pic?json=v</code></td>
-              <td>竖屏随机图片（含主题信息）</td>
-              <td><span class="tag tag-json">JSON</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Quick Start -->
-    <section class="section">
-      <h2>快速使用</h2>
-
-      <p class="hint">📷 直接获取图片（适用于 img 标签、CSS 背景）</p>
-      <div class="url-box">
-        <code id="urlPic"></code>
-        <button class="copy-btn" data-url-id="urlPic" type="button">
+      <!-- Preview -->
+      <section class="preview-card">
+        <button class="preview-btn" id="previewBtn" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
           </svg>
-          <span>复制</span>
+          <span>预览随机图片</span>
         </button>
-      </div>
+        <p class="preview-hint">
+          点击按钮，或按 <kbd>←</kbd> <kbd>→</kbd> 切换上一张 / 下一张
+        </p>
+        <div class="preview-container" id="previewContainer">
+          <img class="preview-img" id="previewImg" alt="预览图片" />
+        </div>
+      </section>
 
-      <p class="hint">📊 获取 JSON 数据（包含主题信息）</p>
-      <div class="url-box">
-        <code id="urlJson"></code>
-        <button class="copy-btn" data-url-id="urlJson" type="button">
+      <!-- API -->
+      <section class="section">
+        <h2>API 接口</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>URL</th>
+                <th>说明</th>
+                <th>返回</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>/pic</code></td>
+                <td>自动根据设备选择方向</td>
+                <td><span class="tag tag-redirect">302 重定向</span></td>
+              </tr>
+              <tr>
+                <td><code>/pic?img=ua</code></td>
+                <td>根据 User-Agent 判断方向</td>
+                <td><span class="tag tag-redirect">302 重定向</span></td>
+              </tr>
+              <tr>
+                <td><code>/pic?img=h</code></td>
+                <td>横屏随机图片</td>
+                <td><span class="tag tag-redirect">302 重定向</span></td>
+              </tr>
+              <tr>
+                <td><code>/pic?img=v</code></td>
+                <td>竖屏随机图片</td>
+                <td><span class="tag tag-redirect">302 重定向</span></td>
+              </tr>
+              <tr>
+                <td><code>/pic?json=h</code></td>
+                <td>横屏随机图片（含主题信息）</td>
+                <td><span class="tag tag-json">JSON</span></td>
+              </tr>
+              <tr>
+                <td><code>/pic?json=v</code></td>
+                <td>竖屏随机图片（含主题信息）</td>
+                <td><span class="tag tag-json">JSON</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Quick Start -->
+      <section class="section">
+        <h2>快速使用</h2>
+
+        <p class="hint">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
           </svg>
-          <span>复制</span>
-        </button>
-      </div>
+          直接获取图片（适用于 img 标签、CSS 背景）
+        </p>
+        <div class="url-box">
+          <code id="urlPic"></code>
+          <button class="copy-btn" data-url-id="urlPic" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>复制</span>
+          </button>
+        </div>
 
-      <div class="code-block">
+        <p class="hint">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="12" y1="20" x2="12" y2="10"/>
+            <line x1="18" y1="20" x2="18" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="16"/>
+          </svg>
+          获取 JSON 数据（包含主题信息）
+        </p>
+        <div class="url-box">
+          <code id="urlJson"></code>
+          <button class="copy-btn" data-url-id="urlJson" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>复制</span>
+          </button>
+        </div>
+
+        <div class="code-block">
 <pre><span class="c">// JSON 响应示例</span>
 {
   <span class="k">"theme"</span>: <span class="s">"dark"</span>,
   <span class="k">"url"</span>: <span class="s">"<span id="exampleUrl"></span>"</span>
 }</pre>
-      </div>
-    </section>
+        </div>
+      </section>
 
-    <!-- Examples -->
-    <section class="section">
-      <h2>使用示例</h2>
+      <!-- Examples -->
+      <section class="section">
+        <h2>使用示例</h2>
 
-      <p class="hint" style="margin-top:0;">HTML</p>
-      <div class="code-block">
+        <p class="hint" style="margin-top:0;">HTML</p>
+        <div class="code-block">
 <pre>&lt;<span class="k">img</span> <span class="k">src</span>=<span class="s">"<span class="origin"></span>/pic?img=h"</span> <span class="k">alt</span>=<span class="s">"随机壁纸"</span>&gt;</pre>
-      </div>
+        </div>
 
-      <p class="hint">CSS 背景</p>
-      <div class="code-block">
+        <p class="hint">CSS 背景</p>
+        <div class="code-block">
 <pre><span class="k">body</span> {
   <span class="k">background-image</span>: <span class="s">url('<span class="origin"></span>/pic')</span>;
   <span class="k">background-size</span>: cover;
 }</pre>
-      </div>
+        </div>
 
-      <p class="hint">JavaScript</p>
-      <div class="code-block">
+        <p class="hint">JavaScript</p>
+        <div class="code-block">
 <pre><span class="k">fetch</span>(<span class="s">'<span class="origin"></span>/pic?json=h'</span>)
   .<span class="k">then</span>(res =&gt; res.<span class="k">json</span>())
   .<span class="k">then</span>(data =&gt; console.<span class="k">log</span>(data.theme, data.url));</pre>
-      </div>
-    </section>
+        </div>
+      </section>
+    </main>
 
     <footer class="footer">
-      <div>💡 图片格式：WebP · 自动适配深色 / 浅色主题</div>
       <div>
-        <a href="https://github.com/oyz8/random-pic-api" target="_blank" rel="noopener noreferrer">⭐ Star on GitHub</a>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 18h6"/>
+          <path d="M10 22h4"/>
+          <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>
+        </svg>
+        图片格式：WebP · 自动适配深色 / 浅色主题
+      </div>
+      <div>
+        <a href="https://github.com/oyz8/random-pic-api" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true" data-solid="true">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Star on GitHub
+        </a>
         <span class="dot">·</span>
-        <a href="https://github.com/oyz8/random-pic-api/issues" target="_blank" rel="noopener noreferrer">🐛 反馈问题</a>
+        <a href="https://github.com/oyz8/random-pic-api/issues" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m8 2 1.88 1.88"/>
+            <path d="M14.12 3.88 16 2"/>
+            <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/>
+            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/>
+            <path d="M12 20v-9"/>
+            <path d="M6.53 9C4.6 8.8 3 7.1 3 5"/>
+            <path d="M6 13H2"/>
+            <path d="M3 21c0-2.1 1.7-3.9 3.8-4"/>
+            <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/>
+            <path d="M22 13h-4"/>
+            <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>
+          </svg>
+          反馈问题
+        </a>
       </div>
     </footer>
   </div>
@@ -824,89 +965,306 @@
       el.textContent = typeof value === 'number' ? value.toLocaleString() : value;
     }
 
-    fetch('/ri/count.json', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        const hd = getAvailableCount(data.hd);
-        const hl = getAvailableCount(data.hl);
-        const vd = getAvailableCount(data.vd);
-        const vl = getAvailableCount(data.vl);
-        const hTotal = hd + hl;
-        const vTotal = vd + vl;
-        setStatText('totalCount', hTotal + vTotal);
-        setStatText('hCount', hTotal);
-        setStatText('vCount', vTotal);
-      })
-      .catch(() => {
-        setStatText('totalCount', '?');
-        setStatText('hCount', '?');
-        setStatText('vCount', '?');
-      });
+    function failStats() {
+      setStatText('totalCount', '?');
+      setStatText('hCount', '?');
+      setStatText('vCount', '?');
+    }
+
+    (function loadStats() {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 5000);
+      fetch('/ri/count.json', { cache: 'no-store', signal: ctrl.signal })
+        .then((res) => res.json())
+        .then((data) => {
+          clearTimeout(to);
+          const hd = getAvailableCount(data.hd);
+          const hl = getAvailableCount(data.hl);
+          const vd = getAvailableCount(data.vd);
+          const vl = getAvailableCount(data.vl);
+          const hTotal = hd + hl;
+          const vTotal = vd + vl;
+          setStatText('totalCount', hTotal + vTotal);
+          setStatText('hCount', hTotal);
+          setStatText('vCount', vTotal);
+        })
+        .catch(() => {
+          clearTimeout(to);
+          failStats();
+        });
+    })();
 
     // ---------- 复制 ----------
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:-9999px;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
     document.querySelectorAll('.copy-btn').forEach((btn) => {
+      const span = btn.querySelector('span');
+      const ORIGINAL = span.textContent;
+      let timer = null;
+
+      const flash = () => {
+        btn.classList.add('copied');
+        span.textContent = '已复制';
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          btn.classList.remove('copied');
+          span.textContent = ORIGINAL;
+        }, 1500);
+      };
+
       btn.addEventListener('click', () => {
         const target = document.getElementById(btn.dataset.urlId);
         if (!target) return;
         const text = target.textContent;
-        navigator.clipboard.writeText(text).then(() => {
-          const span = btn.querySelector('span');
-          const old = span.textContent;
-          btn.classList.add('copied');
-          span.textContent = '已复制';
-          setTimeout(() => {
-            btn.classList.remove('copied');
-            span.textContent = old;
-          }, 1500);
-        });
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(flash, () => {
+            if (fallbackCopy(text)) flash();
+          });
+        } else {
+          if (fallbackCopy(text)) flash();
+        }
       });
     });
 
-    // ---------- 预览 ----------
+    // ---------- 预览（fetch+blob + 历史导航） ----------
     const previewBtn = document.getElementById('previewBtn');
     const previewContainer = document.getElementById('previewContainer');
     const previewImg = document.getElementById('previewImg');
+    const preloadQueue = [];
+    const PREVIEW_TIMEOUT_MS = 8000;
+    const HISTORY_LIMIT = 20;
 
-    previewBtn.addEventListener('click', () => {
-      previewBtn.classList.add('loading');
-      previewBtn.disabled = true;
-      previewContainer.classList.add('show');
+    const history = [];        // blobUrl 字符串数组，从旧到新
+    let historyIndex = -1;     // 当前显示的是 history 里的第几张
+    let isSwitching = false;
+
+    function resetPreviewLoading() {
+      previewImg.classList.remove('loading');
+      previewBtn.classList.remove('loading');
+      previewBtn.disabled = false;
+      isSwitching = false;
+    }
+
+    function makePreviewUrl() {
+      return origin + '/pic?t=' + Date.now() + Math.random().toString(36).slice(2, 10);
+    }
+
+    // 用 fetch 一次性取回图片二进制 → 避免「同一 URL 请求两次，服务端随机两次」
+    function fetchImageBlob(url, signal) {
+      return fetch(url, { cache: 'no-store', signal }).then((res) => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.blob();
+      });
+    }
+
+    function pushHistory(blobUrl) {
+      history.push(blobUrl);
+      if (history.length > HISTORY_LIMIT) {
+        const removed = history.shift();
+        // 只有当被淘汰的那张不是当前正在显示的，才释放内存
+        if (removed !== previewImg.dataset.blob) {
+          try { URL.revokeObjectURL(removed); } catch (_) {}
+        }
+      }
+    }
+
+    function showIndex(i) {
+      const blobUrl = history[i];
+      if (!blobUrl) return;
+      historyIndex = i;
+      previewImg.dataset.blob = blobUrl;
+      previewImg.alt = '预览图片';
+      previewImg.src = blobUrl;
+      previewImg.classList.remove('loading');
+    }
+
+    function enqueuePreload() {
+      const url = makePreviewUrl();
+      const task = { url, blobUrl: null, loaded: false, failed: false, promise: null };
+
+      task.promise = fetchImageBlob(url)
+        .then((blob) => {
+          if (task.failed) return;
+          task.blobUrl = URL.createObjectURL(blob);
+          task.loaded = true;
+        })
+        .catch(() => {
+          task.failed = true;
+          const i = preloadQueue.indexOf(task);
+          if (i >= 0) {
+            preloadQueue.splice(i, 1);
+            setTimeout(enqueuePreload, 800);
+          }
+        });
+
+      preloadQueue.push(task);
+    }
+
+    // 首次进入页面：先预取 1 张
+    enqueuePreload();
+
+    function scrollPreviewIntoView() {
+      setTimeout(() => {
+        previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
+
+    // 从队列（或临时 fetch）取新的一张，加入历史并显示在末尾
+    function takeFromQueueAndShow() {
+      if (preloadQueue.length === 0) {
+        isSwitching = true;
+        previewBtn.classList.add('loading');
+        previewBtn.disabled = true;
+        previewImg.classList.add('loading');
+
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), PREVIEW_TIMEOUT_MS);
+
+        fetchImageBlob(makePreviewUrl(), ctrl.signal)
+          .then((blob) => {
+            clearTimeout(timeoutId);
+            const blobUrl = URL.createObjectURL(blob);
+            pushHistory(blobUrl);
+            showIndex(history.length - 1);
+          })
+          .catch(() => {
+            clearTimeout(timeoutId);
+            previewImg.alt = '加载失败';
+          })
+          .finally(() => {
+            resetPreviewLoading();
+            enqueuePreload();
+          });
+        return;
+      }
+
+      const task = preloadQueue.shift();
+      enqueuePreload();   // 立即补一张，保持队列始终有下一张待命
+
+      isSwitching = true;
       previewImg.classList.add('loading');
 
-      const newSrc = origin + '/pic?t=' + Date.now();
-      const tmp = new Image();
-      tmp.onload = () => {
-        previewImg.src = newSrc;
-        previewImg.classList.remove('loading');
-        previewBtn.classList.remove('loading');
-        previewBtn.disabled = false;
-        setTimeout(() => {
-          previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 50);
+      const finish = () => {
+        if (task.loaded && task.blobUrl) {
+          pushHistory(task.blobUrl);
+          showIndex(history.length - 1);
+        } else {
+          previewImg.alt = '加载失败';
+        }
+        resetPreviewLoading();
       };
-      tmp.onerror = () => {
-        previewImg.classList.remove('loading');
-        previewBtn.classList.remove('loading');
-        previewBtn.disabled = false;
-        previewImg.alt = '加载失败';
-      };
-      tmp.src = newSrc;
+
+      if (task.loaded && task.blobUrl) {
+        finish();
+      } else {
+        let settled = false;
+        const timeoutId = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          previewImg.alt = '加载超时';
+          resetPreviewLoading();
+        }, PREVIEW_TIMEOUT_MS);
+
+        task.promise.then(() => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          finish();
+        });
+      }
+    }
+
+    // 下一张：如果历史里还有下一张就直接切；否则从队列取新图
+    function goNext() {
+      if (isSwitching) return;
+      previewContainer.classList.add('show');
+
+      if (historyIndex >= 0 && historyIndex < history.length - 1) {
+        showIndex(historyIndex + 1);
+        scrollPreviewIntoView();
+        return;
+      }
+
+      takeFromQueueAndShow();
+      scrollPreviewIntoView();
+    }
+
+    // 上一张：只在历史范围内回退
+    function goPrev() {
+      if (isSwitching) return;
+      if (!previewContainer.classList.contains('show')) return;
+      if (historyIndex <= 0) return;
+      showIndex(historyIndex - 1);
+      scrollPreviewIntoView();
+    }
+
+    previewBtn.addEventListener('click', goNext);
+
+    // 键盘 ArrowLeft / ArrowRight
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+
+      // 预览未显示时不拦截方向键，避免影响页面原生滚动
+      if (!previewContainer.classList.contains('show')) return;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      }
     });
 
     // ---------- 主题切换 ----------
     const themeToggle = document.getElementById('themeToggle');
+    const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    function systemTheme() {
+      return prefersDarkQuery.matches ? 'dark' : 'light';
+    }
+
     themeToggle.addEventListener('click', () => {
       const current = document.documentElement.getAttribute('data-theme') || 'light';
       const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
+      applyTheme(next);
       localStorage.setItem('theme', next);
     });
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) {
-        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-      }
+    // 双击：恢复"跟随系统"
+    themeToggle.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('theme');
+      applyTheme(systemTheme());
     });
+
+    const onSystemThemeChange = (e) => {
+      if (!localStorage.getItem('theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    if (prefersDarkQuery.addEventListener) {
+      prefersDarkQuery.addEventListener('change', onSystemThemeChange);
+    } else if (prefersDarkQuery.addListener) {
+      prefersDarkQuery.addListener(onSystemThemeChange);
+    }
   </script>
 </body>
 </html>
