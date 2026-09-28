@@ -1,0 +1,32 @@
+name: 重新编号并更新 count.json
+
+on:
+  workflow_dispatch:   # 手动触发，避免自动跑出意外
+
+jobs:
+  renumber:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # 需要写权限来提交
+
+    steps:
+      - name: Checkout scripts only
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/scripts
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Run renumber script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: python .github/scripts/renumber.py
