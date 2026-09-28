@@ -17,8 +17,9 @@ const MOBILE_KEYWORDS = [
 ];
 
 // -------- 运行时配置（默认值） --------
+// 空数组 = 完全公开模式，不做防盗链、任意 Origin 可跨域
 let ALLOWED_DOMAINS = [];
-let ALLOW_EMPTY_REQUEST = true; // 默认允许空 Referer/Origin
+let ALLOW_EMPTY_REQUEST = true;
 
 // -------- 缓存 --------
 let countData = null;
@@ -32,8 +33,8 @@ let countLoading = null;
 function initConfig(env) {
   if (!env) return;
 
-  // 域名白名单：环境变量 ALLOWED_DOMAINS 为逗号分隔字符串
-  // 未配置时保持空数组，即不授权任何带 Origin/Referer 的域名
+  // 环境变量 ALLOWED_DOMAINS 为逗号分隔字符串
+  // 未配置 => 保持空数组 => 完全公开
   if (env.ALLOWED_DOMAINS && typeof env.ALLOWED_DOMAINS === 'string') {
     ALLOWED_DOMAINS = env.ALLOWED_DOMAINS
       .split(',')
@@ -41,14 +42,17 @@ function initConfig(env) {
       .filter(Boolean);
   }
 
-  // 是否允许空 Referer/Origin
-  // 未配置时使用默认值 true
+  // 是否允许空 Referer/Origin（默认 true）
   if (env.ALLOW_EMPTY_REQUEST !== undefined) {
     ALLOW_EMPTY_REQUEST =
       env.ALLOW_EMPTY_REQUEST === true ||
       env.ALLOW_EMPTY_REQUEST === 'true' ||
       env.ALLOW_EMPTY_REQUEST === '1';
   }
+}
+
+function isPublicMode() {
+  return ALLOWED_DOMAINS.length === 0;
 }
 
 // ========================================
@@ -84,6 +88,15 @@ function checkAntiLeech(request) {
   const refererDomain = extractDomain(referer);
   const originDomain = extractDomain(origin);
 
+  // 完全公开模式：直接放行
+  if (isPublicMode()) {
+    return {
+      allowed: true,
+      domain: originDomain || refererDomain || null,
+      source: 'public',
+    };
+  }
+
   if (originDomain && isDomainAllowed(originDomain)) {
     return { allowed: true, domain: originDomain, source: 'Origin' };
   }
@@ -111,6 +124,11 @@ function checkAntiLeech(request) {
 
 function resolveCorsOrigin(request) {
   const origin = request.headers.get('Origin');
+
+  // 完全公开：反射任意 Origin；无 Origin 时返回 *
+  if (isPublicMode()) {
+    return origin || '*';
+  }
 
   if (origin && isDomainAllowed(extractDomain(origin))) {
     return origin;
@@ -281,22 +299,28 @@ async function handleRequest(request, env) {
     // ---------- CORS 预检 ----------
     if (request.method === 'OPTIONS') {
       const origin = request.headers.get('Origin');
-      const originDomain = extractDomain(origin);
 
-      if (!origin || !isDomainAllowed(originDomain)) {
-        return textResponse('CORS 未授权', 403, null);
+      // 非公开模式：校验 Origin 是否在白名单内
+      if (!isPublicMode()) {
+        const originDomain = extractDomain(origin);
+        if (!origin || !isDomainAllowed(originDomain)) {
+          return textResponse('CORS 未授权', 403, null);
+        }
       }
 
-      return new Response(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-          'Access-Control-Max-Age': '86400',
-          'Vary': 'Origin',
-        },
-      });
+      const allowOrigin = origin || '*';
+      const headers = {
+        'Access-Control-Allow-Origin': allowOrigin,
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '86400',
+      };
+
+      if (allowOrigin !== '*') {
+        headers['Vary'] = 'Origin';
+      }
+
+      return new Response(null, { status: 204, headers });
     }
 
     // ---------- 方法限制 ----------
