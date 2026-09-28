@@ -1,6 +1,18 @@
 {
-  "vd": 14,
-  "vl": 37,
-  "hd": 17,
-  "hl": 23
+  "hd": {
+    "max": 17,
+    "exclude": []
+  },
+  "hl": {
+    "max": 23,
+    "exclude": []
+  },
+  "vd": {
+    "max": 14,
+    "exclude": []
+  },
+  "vl": {
+    "max": 37,
+    "exclude": []
+  }
 }
