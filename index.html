@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>随机图片 API</title>
-  <meta name="description" content="简单、快速、免费的随机图片 API。按设备方向和深色/浅色主题自动匹配，支持 302 跳转与 JSON 返回。" />
+  <meta name="description" content="简单、快速、免费的随机图片 API。按设备方向自动匹配，支持 302 跳转与 JSON 返回。" />
   <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)" />
   <meta property="og:title" content="随机图片 API" />
-  <meta property="og:description" content="按方向和主题自动匹配的随机图片服务。" />
+  <meta property="og:description" content="按方向自动匹配的随机图片服务。" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='600' height='600' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='logoGrad' x1='0' y1='0' x2='24' y2='24' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%2314b8a6'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23logoGrad)' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E" />
@@ -166,8 +166,6 @@
       align-items: center;
       gap: 10px;
     }
-
-    .icon-btn,
 
     .icon-btn {
       position: relative;
@@ -712,7 +710,7 @@
       <section class="hero">
         <h1>随机图片 API</h1>
         <p class="lead">
-          简单、快速、免费的随机图片服务。根据设备方向与深色/浅色主题自动挑选，支持 302 重定向与 JSON 两种返回方式。
+          简单、快速、免费的随机图片服务。根据设备方向自动挑选，支持 302 重定向与 JSON 两种返回方式。
         </p>
 
         <div class="stats">
@@ -782,12 +780,12 @@
               </tr>
               <tr>
                 <td><code>/pic?json=h</code></td>
-                <td>横屏随机图片（含主题信息）</td>
+                <td>横屏随机图片</td>
                 <td><span class="tag tag-json">JSON</span></td>
               </tr>
               <tr>
                 <td><code>/pic?json=v</code></td>
-                <td>竖屏随机图片（含主题信息）</td>
+                <td>竖屏随机图片</td>
                 <td><span class="tag tag-json">JSON</span></td>
               </tr>
             </tbody>
@@ -823,7 +821,7 @@
             <line x1="18" y1="20" x2="18" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="16"/>
           </svg>
-          获取 JSON 数据（包含主题信息）
+          获取 JSON 数据
         </p>
         <div class="url-box">
           <code id="urlJson"></code>
@@ -839,7 +837,6 @@
         <div class="code-block">
 <pre><span class="c">// JSON 响应示例</span>
 {
-  <span class="k">"theme"</span>: <span class="s">"dark"</span>,
   <span class="k">"url"</span>: <span class="s">"<span id="exampleUrl"></span>"</span>
 }</pre>
         </div>
@@ -866,7 +863,7 @@
         <div class="code-block">
 <pre><span class="k">fetch</span>(<span class="s">'<span class="origin"></span>/pic?json=h'</span>)
   .<span class="k">then</span>(res =&gt; res.<span class="k">json</span>())
-  .<span class="k">then</span>(data =&gt; console.<span class="k">log</span>(data.theme, data.url));</pre>
+  .<span class="k">then</span>(data =&gt; console.<span class="k">log</span>(data.url));</pre>
         </div>
       </section>
     </main>
@@ -878,7 +875,7 @@
           <path d="M10 22h4"/>
           <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>
         </svg>
-        图片格式：WebP · 自动适配深色 / 浅色主题
+        图片格式：WebP · 按横屏 / 竖屏自动适配
       </div>
       <div>
 
@@ -891,7 +888,7 @@
     // ---------- 填充 URL ----------
     document.getElementById('urlPic').textContent = origin + '/pic';
     document.getElementById('urlJson').textContent = origin + '/pic?json=h';
-    document.getElementById('exampleUrl').textContent = origin + '/ri/hd/1.webp';
+    document.getElementById('exampleUrl').textContent = origin + '/ri/h/1.webp';
     document.querySelectorAll('.origin').forEach((el) => { el.textContent = origin; });
 
     // ---------- 统计 ----------
@@ -924,12 +921,8 @@
         .then((res) => res.json())
         .then((data) => {
           clearTimeout(to);
-          const hd = getAvailableCount(data.hd);
-          const hl = getAvailableCount(data.hl);
-          const vd = getAvailableCount(data.vd);
-          const vl = getAvailableCount(data.vl);
-          const hTotal = hd + hl;
-          const vTotal = vd + vl;
+          const hTotal = getAvailableCount(data.h);
+          const vTotal = getAvailableCount(data.v);
           setStatText('totalCount', hTotal + vTotal);
           setStatText('hCount', hTotal);
           setStatText('vCount', vTotal);
