@@ -1,321 +1,236 @@
-import os
+#!/usr/bin/env python3
+"""
+合并 hd/hl → h, vd/vl → v，重新编号 1..N，更新 count.json 和 hash_registry.json
+"""
+
 import json
-import base64
-import time
-import requests
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 
-TOKEN = os.environ["GITHUB_TOKEN"]
-REPO = os.environ["REPO"]
-API = f"https://api.github.com/repos/{REPO}"
-HEADERS = {
-    "Authorization": f"Bearer {TOKEN}",
-    "Accept": "application/vnd.github.v3+json",
-}
-
-# h: 横屏（原 hd + hl 合并，hd 在前），v: 竖屏（原 vd + vl 合并，vd 在前）
+# ========== 配置 ==========
+RI_DIR = Path("ri")
 FOLDERS = ["h", "v"]
-SOURCE_FOLDERS = {"h": ["hd", "hl"], "v": ["vd", "vl"]}
-IMAGE_EXT = ".webp"
-BATCH_SIZE = 100
+SOURCE_FOLDERS = {
+    "h": ["hd", "hl"],
+    "v": ["vd", "vl"],
+}
+COUNT_FILE = Path("count.json")
+REGISTRY_FILE = Path("hash_registry.json")
+OFFSET = 200   # 第一阶段偏移，避开 1..N
+HOLD = 400     # 冲突缓冲区间
+# ==========================
 
-# 关键：源目录里 1..N 的编号在目标目录里会冲突，所以重命名分两阶段进行。
-# 第一阶段把每个源目录的整体偏移 MAX_H+MAX_V 之外（例如 hd 偏移 200），
-# 这样绝不会踩到任何现存文件名；第二阶段再紧凑归位到 1..N。
-OFFSET = 200
+def git(*args):
+    """执行 git 命令"""
+    result = subprocess.run(
+        ["git", *args],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        print(f"git {' '.join(args)} 失败:")
+        print(result.stderr)
+        sys.exit(1)
+    return result.stdout.strip()
 
+def get_max_index(folder_path):
+    """获取目录下最大的数字编号（从 1 开始）"""
+    if not folder_path.exists():
+        return 0
+    max_idx = 0
+    for f in folder_path.iterdir():
+        if f.is_file():
+            stem = f.stem
+            try:
+                idx = int(stem)
+                if idx > max_idx:
+                    max_idx = idx
+            except ValueError:
+                pass
+    return max_idx
 
-def _req(method, url, **kw):
-    for attempt in range(3):
-        try:
-            r = requests.request(method, url, headers=HEADERS, timeout=60, **kw)
-            r.raise_for_status()
-            return r.json() if r.content else None
-        except requests.exceptions.HTTPError as e:
-            status = e.response.status_code if e.response is not None else None
-            if status in (404, 422, 502, 503) and attempt < 2:
-                time.sleep(2 ** attempt)
-                continue
-            raise
-
-
-def api_get(url): return _req("GET", url)
-def api_post(url, data): return _req("POST", url, json=data)
-def api_patch(url, data): return _req("PATCH", url, json=data)
-
-
-def get_branch():
-    return api_get(API)["default_branch"]
-
-
-def get_ref(branch):
-    return api_get(f"{API}/git/ref/heads/{branch}")["object"]["sha"]
-
-
-def get_tree(sha):
-    return api_get(f"{API}/git/trees/{sha}")
-
-
-def create_blob(content):
-    encoded = base64.b64encode(content.encode()).decode()
-    return api_post(f"{API}/git/blobs",
-                    {"content": encoded, "encoding": "base64"})["sha"]
-
-
-def create_tree(entries, base_tree_sha=None):
-    payload = {"tree": entries}
-    if base_tree_sha:
-        payload["base_tree"] = base_tree_sha
-    return api_post(f"{API}/git/trees", payload)["sha"]
-
-
-def create_commit(message, tree_sha, parent_sha):
-    return api_post(f"{API}/git/commits",
-                    {"message": message, "tree": tree_sha, "parents": [parent_sha]})["sha"]
-
-
-def update_ref(branch, commit_sha):
-    api_patch(f"{API}/git/refs/heads/{branch}", {"sha": commit_sha, "force": True})
-
-
-def set_temp_ref(name, sha):
-    try:
-        api_get(f"{API}/git/ref/{name}")
-        api_patch(f"{API}/git/refs/{name}", {"sha": sha, "force": True})
-    except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code == 404:
-            api_post(f"{API}/git/refs", {"ref": f"refs/{name}", "sha": sha})
-        else:
-            raise
-
-
-def delete_temp_ref(name):
-    try:
-        requests.delete(f"{API}/git/refs/{name}", headers=HEADERS, timeout=60)
-    except Exception:
-        pass
-
-
-def list_files(sha):
-    """返回 {name: (mode, blob_sha)}，仅 blob，非递归"""
-    out = {}
-    for item in get_tree(sha)["tree"]:
-        if item["type"] != "blob":
-            continue
-        if item["path"].endswith(IMAGE_EXT):
-            out[item["path"]] = (item["mode"], item["sha"])
-    return out
-
-
-def apply_batch(base_sha, parent_commit, deletions, additions, temp_ref, label):
-    """
-    deletions: [old_path, ...]
-    additions: [(new_path, mode, blob_sha), ...]
-    """
-    entries = [{"path": p, "mode": "100644", "type": "blob", "sha": None}
-               for p in deletions]
-    for path, mode, blob_sha in additions:
-        entries.append({"path": path, "mode": mode, "type": "blob", "sha": blob_sha})
-    new_tree = create_tree(entries, base_tree_sha=base_sha)
-    new_commit = create_commit(label, new_tree, parent_commit)
-    set_temp_ref(temp_ref, new_commit)
-    return new_tree, new_commit
-
+def collect_files(folder_path):
+    """收集目录下所有文件，返回 [(编号, Path)] 列表"""
+    files = []
+    if not folder_path.exists():
+        return files
+    for f in folder_path.iterdir():
+        if f.is_file():
+            try:
+                idx = int(f.stem)
+                files.append((idx, f))
+            except ValueError:
+                pass
+    return sorted(files)
 
 def main():
-    branch = get_branch()
-    head_sha = get_ref(branch)
-    root_tree_sha = api_get(f"{API}/git/commits/{head_sha}")["tree"]["sha"]
-    root_tree = get_tree(root_tree_sha)
+    print("=" * 50)
+    print("开始合并目录: hd/hl → h, vd/vl → v")
+    print("=" * 50)
 
-    ri_entry = next((i for i in root_tree["tree"]
-                     if i["path"] == "ri" and i["type"] == "tree"), None)
-    if not ri_entry:
-        raise Exception("未找到 ri 目录")
-    ri_sha = ri_entry["sha"]
+    # ---- 阶段 0: 检查源目录是否存在 ----
+    all_sources = []
+    for sources in SOURCE_FOLDERS.values():
+        all_sources.extend(sources)
 
-    other_root = [
-        {"path": i["path"], "mode": i["mode"], "type": i["type"], "sha": i["sha"]}
-        for i in root_tree["tree"] if i["path"] != "ri"
-    ]
+    missing = [s for s in all_sources if not RI_DIR.joinpath(s).exists()]
+    if missing:
+        print(f"❌ 源目录不存在: {missing}")
+        print("请确认 ri/ 下有这些目录")
+        sys.exit(1)
 
-    ri_tree = get_tree(ri_sha)
-    source_shas = {}
-    ri_other = []
-    for i in ri_tree["tree"]:
-        if i["path"] in FOLDERS + ["hd", "hl", "vd", "vl"] and i["type"] == "tree":
-            source_shas[i["path"]] = i["sha"]
-        elif i["path"] == "count.json":
-            continue
-        else:
-            ri_other.append({"path": i["path"], "mode": i["mode"],
-                             "type": i["type"], "sha": i["sha"]})
+    # ---- 阶段 1: 创建新目录，删除旧目录（git 跟踪）----
+    print("\n📁 阶段 1: 准备目录结构...")
 
-    temp_ref = f"heads/_renumber_tmp_{branch}"
-    delete_temp_ref(temp_ref)
+    # 确保新目录存在
+    for new_folder in FOLDERS:
+        new_path = RI_DIR.joinpath(new_folder)
+        new_path.mkdir(exist_ok=True)
 
-    # 新建空目录树，用于承载合并结果
-    new_folder_shas = {}
-    for f in FOLDERS:
-        new_folder_shas[f] = create_tree([])
-    new_count = {}
-
-    current_commit = head_sha
-    # 锚点：先让 ri 树包含四个新空目录（若存在同名旧目录会冲突，见下）
-    # 策略：先删除旧目录，再添加新目录。
-    # 第一次先构造"无旧目录、无新目录"的 ri 树（删旧）
-    deletions_ri = [{"path": f, "mode": "040000", "type": "tree", "sha": None}
-                    for f in SOURCE_FOLDERS.keys()  # 不会命中，占位
-                    if False]
-    # 用 base_tree=ri_sha 做增量：删除 hd/hl/vd/vl，添加 h/v
-    del_entries = [{"path": f, "mode": "040000", "type": "tree", "sha": None}
-                   for f in ["hd", "hl", "vd", "vl"] if f in source_shas]
-    add_entries = [{"path": f, "mode": "040000", "type": "tree", "sha": new_folder_shas[f]}
-                   for f in FOLDERS]
-    ri_step1 = create_tree(del_entries + add_entries, base_tree_sha=ri_sha)
-    ri_step1 = ri_step1  # 上面已经包含删除与新增
-    root_step1 = create_tree(
-        other_root + [{"path": "ri", "mode": "040000",
-                       "type": "tree", "sha": ri_step1}],
-        base_tree_sha=root_tree_sha,
-    )
-    current_commit = create_commit(
-        "chore(ri): replace hd/hl/vd/vl with empty h/v", root_step1, current_commit
-    )
-    set_temp_ref(temp_ref, current_commit)
-    ri_sha_now = ri_step1
-
-    for folder in FOLDERS:
-        nxt = 1
-        for src in SOURCE_FOLDERS[folder]:
-            if src not in source_shas:
-                continue
-            files = list_files(source_shas[src])
-            if not files:
-                continue
-            # 按原编号排序
-            items = sorted(files.items(),
-                           key=lambda kv: int(kv[0][:-len(IMAGE_EXT)]))
-            print(f"[{folder}] 合并 {src}: {len(items)} 个文件")
-
-            # 第一阶段：整体偏移到 OFFSET 之外，保证不冲突
-            stage1 = [
-                (old, f"{OFFSET + nxt0}{IMAGE_EXT}", mode, blob)
-                for nxt0, (old, (mode, blob)) in enumerate(items, start=nxt)
-            ]
-            additions1 = [(p, m, b) for (_, p, m, b) in stage1]
-            dels1 = [old for (old, _, _, _) in stage1]
-
-            per = BATCH_SIZE
-            # 第一阶段
-            tree_cur = new_folder_shas[folder]
-            for i in range(0, len(stage1), per):
-                chunk = stage1[i:i + per]
-                tree_cur, current_commit = apply_batch(
-                    tree_cur, current_commit,
-                    [o for (o, _, _, _) in chunk],
-                    [(p, md, bs) for (_, p, md, bs) in chunk],
-                    temp_ref,
-                    f"stage1 {folder} {src} batch {i//per+1}",
+    # 用 git rm 删除旧目录（如果 git 跟踪了的话）
+    for src in all_sources:
+        src_path = RI_DIR.joinpath(src)
+        if src_path.exists():
+            # 先尝试 git rm（如果文件被 git 跟踪）
+            try:
+                subprocess.run(
+                    ["git", "rm", "-rf", str(src_path)],
+                    capture_output=True, text=True, check=False
                 )
-            new_folder_shas[folder] = tree_cur
+            except Exception:
+                pass
+            # 再物理删除（以防 git rm 没生效）
+            if src_path.exists():
+                shutil.rmtree(src_path)
 
-            nxt += len(items)
+    print("✅ 目录结构已调整")
 
-        total = nxt - 1
-        new_count[folder] = {"max": total, "exclude": []}
+    # ---- 阶段 2: 从源目录复制文件到新目录（偏移编号）----
+    print("\n📦 阶段 2: 合并文件...")
 
-        # 第二阶段：把 OFFSET 之外的文件归位到 1..total
-        if total == 0:
-            continue
-        files2 = list_files(new_folder_shas[folder])
-        # 只处理 OFFSET 区间内的文件
-        stage2 = []
-        for name in sorted(files2,
-                           key=lambda p: int(p[:-len(IMAGE_EXT)]) - OFFSET):
-            if not name.endswith(IMAGE_EXT):
+    new_counts = {}
+
+    for new_folder, sources in SOURCE_FOLDERS.items():
+        new_path = RI_DIR.joinpath(new_folder)
+        current_max = 0
+
+        for src in sources:
+            src_path = RI_DIR.joinpath(src)
+            if not src_path.exists():
                 continue
-            num = int(name[:-len(IMAGE_EXT)])
-            if num <= OFFSET:
-                continue
-            orig = num - OFFSET
-            if orig < 1 or orig > total:
-                continue
-            mode, blob = files2[name]
-            stage2.append((name, f"{orig}{IMAGE_EXT}", mode, blob))
 
-        # 归位也要防冲突：先把 1..total 中"即将被占"的槽位移开。
-        # 简化：逐批处理，每批只把当前槽位腾到更高区间再落位。
-        # 由于 stage2 里目标槽位在 1..total 且当前文件都在 OFFSET 之外，
-        # 直接做"删旧 + 加新"会冲突（目标路径已存在同名旧文件）。
-        # 因此归位分两步：先全部再偏移到 OFFSET*2 之外，再从那里落位。
-        HOLD = OFFSET * 2
-        tree_cur = new_folder_shas[folder]
-        # 先把 stage2 文件抬到 HOLD 区间
-        hold_map = {}
-        for old, new_name, mode, blob in stage2:
-            hold_map[old] = (f"{HOLD + int(old[:-len(IMAGE_EXT)]) - OFFSET}{IMAGE_EXT}",
-                            mode, blob)
-        for i in range(0, len(hold_map), per):
-            keys = list(hold_map)[i:i + per]
-            tree_cur, current_commit = apply_batch(
-                tree_cur, current_commit,
-                keys,
-                [hold_map[k] for k in keys],
-                temp_ref,
-                f"hold {folder} batch {i//per+1}",
-            )
-        # 再从 HOLD 区间落位到 1..total
-        files3 = list_files(tree_cur)
-        final_map = {}
-        for name in sorted(files3):
-            if not name.endswith(IMAGE_EXT):
-                continue
-            num = int(name[:-len(IMAGE_EXT)])
-            if num <= HOLD:
-                continue
-            orig = num - HOLD
-            if orig < 1 or orig > total:
-                continue
-            mode, blob = files3[name]
-            final_map[name] = (f"{orig}{IMAGE_EXT}", mode, blob)
-        for i in range(0, len(final_map), per):
-            keys = list(final_map)[i:i + per]
-            tree_cur, current_commit = apply_batch(
-                tree_cur, current_commit,
-                keys,
-                [final_map[k] for k in keys],
-                temp_ref,
-                f"finalize {folder} batch {i//per+1}",
-            )
-        new_folder_shas[folder] = tree_cur
+            files = collect_files(src_path)
+            print(f"  {src}: {len(files)} 个文件")
 
-        print(f"[{folder}] 合并完成: {total} 个文件")
+            for old_idx, file_path in files:
+                current_max += 1
+                # 复制文件，用新编号
+                new_file = new_path.joinpath(f"{current_max}.webp")
+                shutil.copy2(file_path, new_file)
 
-    # 最终 count.json
-    count_blob_sha = create_blob(json.dumps(new_count, indent=2, ensure_ascii=False))
+            print(f"    → 已合并到 {new_folder}/ (当前 {current_max} 个)")
 
-    final_ri_entries = [
-        {"path": f, "mode": "040000", "type": "tree", "sha": new_folder_shas[f]}
-        for f in FOLDERS
-    ]
-    final_ri_entries.extend(ri_other)
-    final_ri_entries.append({"path": "count.json", "mode": "100644",
-                             "type": "blob", "sha": count_blob_sha})
+        new_counts[new_folder] = current_max
+        print(f"  ✅ {new_folder}/ 共 {current_max} 个文件")
 
-    final_ri_sha = create_tree(final_ri_entries, base_tree_sha=ri_sha_now)
-    final_root_sha = create_tree(
-        other_root + [{"path": "ri", "mode": "040000",
-                       "type": "tree", "sha": final_ri_sha}],
-        base_tree_sha=root_tree_sha
-    )
-    final_commit = create_commit(
-        "chore(ri): merge hd+hl into h, vd+vl into v and update count.json",
-        final_root_sha, head_sha
-    )
-    update_ref(branch, final_commit)
-    delete_temp_ref(temp_ref)
-    print("完成:", new_count)
+    # ---- 阶段 3: 更新 count.json ----
+    print("\n📝 阶段 3: 更新 count.json...")
+    count_data = {}
+    for folder, count in new_counts.items():
+        count_data[folder] = {
+            "max": count,
+            "exclude": []
+        }
 
+    with open(COUNT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(count_data, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ count.json 已更新: {count_data}")
+
+    # ---- 阶段 4: 更新 hash_registry.json ----
+    print("\n🔐 阶段 4: 更新 hash_registry.json...")
+
+    if REGISTRY_FILE.exists():
+        with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+            old_registry = json.load(f)
+    else:
+        old_registry = {}
+
+    new_registry = {}
+
+    # 建立旧路径到 hash 的映射
+    # 旧格式: "hd/1.webp" → hash
+    # 新格式: "h/1.webp" → hash
+
+    # 源到新目录的映射
+    source_to_new = {}
+    for new_folder, sources in SOURCE_FOLDERS.items():
+        for src in sources:
+            source_to_new[src] = new_folder
+
+    # 重新编号计数
+    new_counters = {f: 0 for f in FOLDERS}
+
+    for new_folder, sources in SOURCE_FOLDERS.items():
+        for src in sources:
+            # 找出旧 registry 中属于这个源目录的条目
+            prefix = f"{src}/"
+            src_entries = {
+                k: v for k, v in old_registry.items()
+                if k.startswith(prefix)
+            }
+
+            # 按编号排序
+            sorted_entries = []
+            for key, value in src_entries.items():
+                try:
+                    idx = int(key.replace(prefix, "").replace(".webp", ""))
+                    sorted_entries.append((idx, key, value))
+                except ValueError:
+                    pass
+
+            sorted_entries.sort(key=lambda x: x[0])
+
+            for idx, old_key, hash_value in sorted_entries:
+                new_counters[new_folder] += 1
+                new_key = f"{new_folder}/{new_counters[new_folder]}.webp"
+                new_registry[new_key] = hash_value
+
+    with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(new_registry, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ hash_registry.json 已更新，共 {len(new_registry)} 条记录")
+
+    # ---- 阶段 5: Git 提交 ----
+    print("\n📤 阶段 5: 提交到 git...")
+
+    # 添加所有变更
+    git("add", ".")
+    git("add", "ri/")
+
+    # 检查是否有变更需要提交
+    status = git("status", "--porcelain")
+    if not status:
+        print("ℹ️ 没有需要提交的变更")
+        return
+
+    # 提交
+    git("commit", "-m", "合并目录: hd/hl → h, vd/vl → v")
+
+    # 推送
+    branch = git("branch", "--show-current")
+    git("push", "origin", branch)
+
+    print(f"✅ 已推送到 {branch}")
+
+    print("\n" + "=" * 50)
+    print("🎉 完成！目录合并结果:")
+    for folder, count in new_counts.items():
+        print(f"  {folder}/: {count} 个文件")
+    print("=" * 50)
 
 if __name__ == "__main__":
     main()
