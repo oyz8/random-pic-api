@@ -5,7 +5,7 @@
 const COUNT_URL_PATH = '/ri/count.json';
 const IMAGE_BASE_PATH = '/ri';
 const IMAGE_EXT = '.webp';
-const FOLDERS = ['hd', 'hl', 'vd', 'vl'];
+const FOLDERS = ['h', 'v'];
 
 const COUNT_CACHE_TTL = 5 * 60 * 1000;
 const COUNT_ERROR_CACHE_TTL = 30 * 1000;
@@ -214,14 +214,12 @@ async function loadCount(request) {
       console.error('Failed to load count.json:', e);
 
       const emptyData = {
-        hd: { max: 0, exclude: [] },
-        hl: { max: 0, exclude: [] },
-        vd: { max: 0, exclude: [] },
-        vl: { max: 0, exclude: [] },
+        h: { max: 0, exclude: [] },
+        v: { max: 0, exclude: [] },
       };
 
       countData = emptyData;
-      validArrays = { hd: [], hl: [], vd: [], vl: [] };
+      validArrays = { h: [], v: [] };
       countExpiresAt = Date.now() + COUNT_ERROR_CACHE_TTL;
 
       return emptyData;
@@ -261,27 +259,16 @@ function isMobileDevice(userAgent) {
   return MOBILE_KEYWORDS.some((keyword) => ua.includes(keyword));
 }
 
-function randomFromTwoFolders(darkFolder, lightFolder) {
-  const darkArr = validArrays?.[darkFolder] || [];
-  const lightArr = validArrays?.[lightFolder] || [];
-  const total = darkArr.length + lightArr.length;
+function randomFromFolder(folder) {
+  const arr = validArrays?.[folder] || [];
 
-  if (total === 0) return null;
+  if (arr.length === 0) return null;
 
-  const idx = Math.floor(Math.random() * total);
-
-  if (idx < darkArr.length) {
-    return {
-      folder: darkFolder,
-      file: darkArr[idx],
-      theme: 'dark',
-    };
-  }
+  const file = arr[Math.floor(Math.random() * arr.length)];
 
   return {
-    folder: lightFolder,
-    file: lightArr[idx - darkArr.length],
-    theme: 'light',
+    folder,
+    file,
   };
 }
 
@@ -347,10 +334,7 @@ async function handleRequest(request, env) {
 
     // JSON 模式
     if (jsonType === 'h' || jsonType === 'v') {
-      const darkFolder = jsonType + 'd';
-      const lightFolder = jsonType + 'l';
-
-      const selected = randomFromTwoFolders(darkFolder, lightFolder);
+      const selected = randomFromFolder(jsonType);
 
       if (!selected) {
         return jsonResponse({ error: '没有图片' }, 404, corsOrigin);
@@ -363,7 +347,6 @@ async function handleRequest(request, env) {
 
       return jsonResponse(
         {
-          theme: selected.theme,
           url: imageUrl,
         },
         200,
@@ -384,10 +367,7 @@ async function handleRequest(request, env) {
       orientation = isMobileDevice(userAgent) ? 'v' : 'h';
     }
 
-    const darkFolder = orientation + 'd';
-    const lightFolder = orientation + 'l';
-
-    const selected = randomFromTwoFolders(darkFolder, lightFolder);
+    const selected = randomFromFolder(orientation);
 
     if (!selected) {
       return textResponse('没有图片', 404, corsOrigin);
