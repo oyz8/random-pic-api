@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>随机图片 API</title>
-  <meta name="description" content="简单、快速、免费的随机图片 API。按设备方向和深色/浅色主题自动匹配，支持 302 跳转与 JSON 返回。" />
+  <meta name="description" content="简单、快速、免费的随机图片 API。按设备方向自动匹配，支持 302 跳转与 JSON 返回。" />
   <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)" />
   <meta property="og:title" content="随机图片 API" />
-  <meta property="og:description" content="按方向和主题自动匹配的随机图片服务。" />
+  <meta property="og:description" content="按方向自动匹配的随机图片服务。" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='600' height='600' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='logoGrad' x1='0' y1='0' x2='24' y2='24' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%2314b8a6'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23logoGrad)' d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E" />
@@ -167,45 +167,21 @@
       gap: 10px;
     }
 
-    .icon-btn,
-    .gh-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid var(--panel-border);
-      background: var(--panel);
-      color: var(--text);
-      cursor: pointer;
-      box-shadow: var(--card-shadow);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      text-decoration: none;
-      padding: 0 14px;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: 'Outfit', sans-serif;
-      gap: 8px;
-    }
-
     .icon-btn {
       position: relative;
       width: 40px;
       padding: 0;
     }
 
-    .icon-btn:hover,
-    .gh-link:hover {
+    .icon-btn:hover {
       background: var(--table-row-hover);
       transform: translateY(-2px);
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
     }
 
-    .icon-btn:active,
-    .gh-link:active { transform: scale(0.96); }
+    .icon-btn:active { transform: scale(0.96); }
 
-    .icon-btn svg,
-    .gh-link svg {
+    .icon-btn svg {
       width: 18px;
       height: 18px;
       fill: none;
@@ -214,8 +190,6 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-
-    .gh-link svg { fill: currentColor; stroke: none; }
 
     :root[data-theme="dark"] .icon-btn .sun-icon { opacity: 1; transform: rotate(0deg) scale(1); }
     :root[data-theme="dark"] .icon-btn .moon-icon { opacity: 0; transform: rotate(90deg) scale(0); position: absolute; }
@@ -694,8 +668,6 @@
       .stats { grid-template-columns: 1fr 1fr; gap: 12px; }
       .stats .stat:last-child { grid-column: 1 / -1; }
       .stat-num { font-size: 22px; }
-      .gh-link span { display: none; }
-      .gh-link { padding: 0 12px; }
       th, td { padding: 10px 12px; font-size: 12.5px; }
       h1 { font-size: 24px; }
       .eyebrow { font-size: 10px; padding: 5px 10px; }
@@ -713,12 +685,7 @@
         <span class="eyebrow">Random Image API</span>
       </div>
       <div class="header-actions">
-        <a href="https://github.com/oyz8/random-pic-api" target="_blank" rel="noopener noreferrer" class="gh-link" aria-label="GitHub">
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          <span>GitHub</span>
-        </a>
+
         <button id="themeToggle" class="icon-btn" aria-label="切换主题" title="单击切换日间/夜间模式，双击恢复跟随系统">
           <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="5"></circle>
@@ -743,7 +710,7 @@
       <section class="hero">
         <h1>随机图片 API</h1>
         <p class="lead">
-          简单、快速、免费的随机图片服务。根据设备方向与深色/浅色主题自动挑选，支持 302 重定向与 JSON 两种返回方式。
+          简单、快速、免费的随机图片服务。根据设备方向自动挑选，支持 302 重定向与 JSON 两种返回方式。
         </p>
 
         <div class="stats">
@@ -813,12 +780,12 @@
               </tr>
               <tr>
                 <td><code>/pic?json=h</code></td>
-                <td>横屏随机图片（含主题信息）</td>
+                <td>横屏随机图片</td>
                 <td><span class="tag tag-json">JSON</span></td>
               </tr>
               <tr>
                 <td><code>/pic?json=v</code></td>
-                <td>竖屏随机图片（含主题信息）</td>
+                <td>竖屏随机图片</td>
                 <td><span class="tag tag-json">JSON</span></td>
               </tr>
             </tbody>
@@ -854,7 +821,7 @@
             <line x1="18" y1="20" x2="18" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="16"/>
           </svg>
-          获取 JSON 数据（包含主题信息）
+          获取 JSON 数据
         </p>
         <div class="url-box">
           <code id="urlJson"></code>
@@ -870,7 +837,6 @@
         <div class="code-block">
 <pre><span class="c">// JSON 响应示例</span>
 {
-  <span class="k">"theme"</span>: <span class="s">"dark"</span>,
   <span class="k">"url"</span>: <span class="s">"<span id="exampleUrl"></span>"</span>
 }</pre>
         </div>
@@ -897,7 +863,7 @@
         <div class="code-block">
 <pre><span class="k">fetch</span>(<span class="s">'<span class="origin"></span>/pic?json=h'</span>)
   .<span class="k">then</span>(res =&gt; res.<span class="k">json</span>())
-  .<span class="k">then</span>(data =&gt; console.<span class="k">log</span>(data.theme, data.url));</pre>
+  .<span class="k">then</span>(data =&gt; console.<span class="k">log</span>(data.url));</pre>
         </div>
       </section>
     </main>
@@ -909,33 +875,10 @@
           <path d="M10 22h4"/>
           <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>
         </svg>
-        图片格式：WebP · 自动适配深色 / 浅色主题
+        图片格式：WebP · 按横屏 / 竖屏自动适配
       </div>
       <div>
-        <a href="https://github.com/oyz8/random-pic-api" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" aria-hidden="true" data-solid="true">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          Star on GitHub
-        </a>
-        <span class="dot">·</span>
-        <a href="https://github.com/oyz8/random-pic-api/issues" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m8 2 1.88 1.88"/>
-            <path d="M14.12 3.88 16 2"/>
-            <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/>
-            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/>
-            <path d="M12 20v-9"/>
-            <path d="M6.53 9C4.6 8.8 3 7.1 3 5"/>
-            <path d="M6 13H2"/>
-            <path d="M3 21c0-2.1 1.7-3.9 3.8-4"/>
-            <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/>
-            <path d="M22 13h-4"/>
-            <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/>
-          </svg>
-          反馈问题
-        </a>
-      </div>
+
     </footer>
   </div>
 
@@ -945,7 +888,7 @@
     // ---------- 填充 URL ----------
     document.getElementById('urlPic').textContent = origin + '/pic';
     document.getElementById('urlJson').textContent = origin + '/pic?json=h';
-    document.getElementById('exampleUrl').textContent = origin + '/ri/hd/1.webp';
+    document.getElementById('exampleUrl').textContent = origin + '/ri/h/1.webp';
     document.querySelectorAll('.origin').forEach((el) => { el.textContent = origin; });
 
     // ---------- 统计 ----------
@@ -978,12 +921,8 @@
         .then((res) => res.json())
         .then((data) => {
           clearTimeout(to);
-          const hd = getAvailableCount(data.hd);
-          const hl = getAvailableCount(data.hl);
-          const vd = getAvailableCount(data.vd);
-          const vl = getAvailableCount(data.vl);
-          const hTotal = hd + hl;
-          const vTotal = vd + vl;
+          const hTotal = getAvailableCount(data.h);
+          const vTotal = getAvailableCount(data.v);
           setStatText('totalCount', hTotal + vTotal);
           setStatText('hCount', hTotal);
           setStatText('vCount', vTotal);
